@@ -1,0 +1,187 @@
+{
+  "version": 1,
+  "description": "Plano de Treino Semanal Shoka - Modelo compatível com IA",
+  "active_day": "A",
+  "routines": [
+    {
+      "day_id": "A",
+      "name": "Treino A - Peito, Tríceps & Ombro",
+      "exercises": [
+        {
+          "id": "supino_reto",
+          "name": "Supino Reto com Barra",
+          "target_sets": 4,
+          "target_reps": "8-12",
+          "default_weight": 80.0,
+          "rest_seconds": 90,
+          "notes": "Descer até tocar o peito, controle escapular"
+        },
+        {
+          "id": "supino_inclinado_halteres",
+          "name": "Supino Inclinado com Halteres",
+          "target_sets": 3,
+          "target_reps": "10-12",
+          "default_weight": 26.0,
+          "rest_seconds": 60,
+          "notes": "Banco a 30 graus"
+        },
+        {
+          "id": "crucifixo_polia",
+          "name": "Crucifixo na Polia Média",
+          "target_sets": 3,
+          "target_reps": "12-15",
+          "default_weight": 15.0,
+          "rest_seconds": 60,
+          "notes": "Pico de contração de 1 segundo"
+        },
+        {
+          "id": "desenvolvimento_halteres",
+          "name": "Desenvolvimento com Halteres",
+          "target_sets": 4,
+          "target_reps": "8-12",
+          "default_weight": 18.0,
+          "rest_seconds": 75,
+          "notes": "Cotovelos levemente para frente"
+        },
+        {
+          "id": "elevacao_lateral",
+          "name": "Elevação Lateral",
+          "target_sets": 4,
+          "target_reps": "12-15",
+          "default_weight": 12.0,
+          "rest_seconds": 45,
+          "notes": "Manter o punho firme"
+        },
+        {
+          "id": "triceps_corda",
+          "name": "Tríceps Corda na Polia",
+          "target_sets": 4,
+          "target_reps": "10-12",
+          "default_weight": 25.0,
+          "rest_seconds": 45,
+          "notes": "Abrir bem a corda no final"
+        }
+      ]
+    },
+    {
+      "day_id": "B",
+      "name": "Treino B - Costas, Bíceps & Trapézio",
+      "exercises": [
+        {
+          "id": "puxada_alta",
+          "name": "Puxada Alta Frontal",
+          "target_sets": 4,
+          "target_reps": "8-12",
+          "default_weight": 60.0,
+          "rest_seconds": 90,
+          "notes": "Puxar em direção à parte superior do peito"
+        },
+        {
+          "id": "remada_curvada",
+          "name": "Remada Curvada com Barra",
+          "target_sets": 4,
+          "target_reps": "8-10",
+          "default_weight": 65.0,
+          "rest_seconds": 90,
+          "notes": "Costas seladas, puxada até o umbigo"
+        },
+        {
+          "id": "remada_baixa",
+          "name": "Remada Baixa com Triângulo",
+          "target_sets": 3,
+          "target_reps": "10-12",
+          "default_weight": 55.0,
+          "rest_seconds": 60,
+          "notes": "Alongar bem as dorsais na fase excêntrica"
+        },
+        {
+          "id": "crucifixo_invertido",
+          "name": "Crucifixo Invertido com Halteres",
+          "target_sets": 3,
+          "target_reps": "12-15",
+          "default_weight": 10.0,
+          "rest_seconds": 45,
+          "notes": "Foco no deltóide posterior"
+        },
+        {
+          "id": "rosca_direta",
+          "name": "Rosca Direta com Barra W",
+          "target_sets": 4,
+          "target_reps": "10-12",
+          "default_weight": 28.0,
+          "rest_seconds": 60,
+          "notes": "Cotovelos fixos ao lado do corpo"
+        },
+        {
+          "id": "rosca_martelo",
+          "name": "Rosca Martelo com Halteres",
+          "target_sets": 3,
+          "target_reps": "10-12",
+          "default_weight": 14.0,
+          "rest_seconds": 45,
+          "notes": "Foco no braquiorradial"
+        }
+      ]
+    },
+    {
+      "day_id": "C",
+      "name": "Treino C - Pernas & Abdômen",
+      "exercises": [
+        {
+          "id": "agachamento_livre",
+          "name": "Agachamento Livre",
+          "target_sets": 4,
+          "target_reps": "8-10",
+          "default_weight": 90.0,
+          "rest_seconds": 120,
+          "notes": "Quebrar a paralela mantendo a coluna neutra"
+        },
+        {
+          "id": "leg_press_45",
+          "name": "Leg Press 45°",
+          "target_sets": 4,
+          "target_reps": "10-12",
+          "default_weight": 180.0,
+          "rest_seconds": 90,
+          "notes": "Pés na largura dos ombros"
+        },
+        {
+          "id": "cadeira_extensora",
+          "name": "Cadeira Extensora",
+          "target_sets": 3,
+          "target_reps": "12-15",
+          "default_weight": 50.0,
+          "rest_seconds": 60,
+          "notes": "Segurar 1s no topo"
+        },
+        {
+          "id": "mesa_flexora",
+          "name": "Mesa Flexora",
+          "target_sets": 4,
+          "target_reps": "10-12",
+          "default_weight": 40.0,
+          "rest_seconds": 60,
+          "notes": "Controle total na descida"
+        },
+        {
+          "id": "panturrilha_em_pe",
+          "name": "Panturrilha em Pé",
+          "target_sets": 4,
+          "target_reps": "15-20",
+          "default_weight": 70.0,
+          "rest_seconds": 45,
+          "notes": "Alongamento máximo embaixo e contração no topo"
+        },
+        {
+          "id": "abdominal_infra",
+          "name": "Abdominal Infra nas Barras Paralelas",
+          "target_sets": 3,
+          "target_reps": "15-20",
+          "default_weight": 0.0,
+          "rest_seconds": 45,
+          "notes": "Elevação de pernas com controle do quadril"
+        }
+      ]
+    }
+  ]
+}
