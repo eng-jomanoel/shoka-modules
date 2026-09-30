@@ -11,9 +11,11 @@ M.help = "g check | g skip | g w+ | g w- | g r+ | g r- | g day [A|B|C] | g auto 
 
 -- Internal State
 local plan = nil
+local active_file = "treino.json"
 local active_day_id = "A"
 local current_ex_idx = 1
 local show_exercise_list = false
+local show_file_list = false
 local last_auto_date = ""
 local user_override_date = ""
 
@@ -119,6 +121,7 @@ end
 -- Save / Load State
 local function save_state()
     local data = {
+        active_file = active_file,
         active_day_id = active_day_id,
         current_ex_idx = current_ex_idx,
         last_auto_date = last_auto_date,
@@ -159,6 +162,7 @@ local function load_state()
         if content and Engine.json then
             local parsed = Engine.json.parse(content)
             if parsed then
+                if parsed.active_file then active_file = parsed.active_file end
                 if parsed.active_day_id then active_day_id = parsed.active_day_id end
                 if parsed.current_ex_idx then current_ex_idx = parsed.current_ex_idx end
                 if parsed.last_auto_date then last_auto_date = parsed.last_auto_date end
@@ -169,44 +173,64 @@ local function load_state()
     end
 end
 
+local function get_available_workout_files()
+    local files = {}
+    if Engine and Engine.files and Engine.files.list then
+        local list = Engine.files.list()
+        if list then
+            for _, fname in ipairs(list) do
+                local lower = string.lower(fname)
+                if string.match(lower, "%.json$") and lower ~= "treino_state.json" then
+                    table.insert(files, fname)
+                end
+            end
+        end
+    end
+    table.sort(files)
+    return files
+end
+
 -- Load Workout Plan from JSON
 local function load_plan_from_file(filename)
-    filename = filename or "treino.json"
+    filename = filename or active_file or "treino.json"
     if Engine and Engine.files and Engine.files.exists(filename) then
         local content = Engine.files.read(filename)
         if content and Engine.json then
             local parsed = Engine.json.parse(content)
             if parsed and parsed.routines and #parsed.routines > 0 then
                 plan = parsed
+                active_file = filename
                 if parsed.active_day and parsed.active_day ~= "auto" then
                     active_day_id = parsed.active_day
                 end
-                return true, "Plano carregado com sucesso de " .. filename
+                return true, "Ficha carregada com sucesso de " .. filename
             end
         end
     end
 
     -- Try treino_exemplo.json
-    if Engine and Engine.files and Engine.files.exists("treino_exemplo.json") then
+    if filename ~= "treino_exemplo.json" and Engine and Engine.files and Engine.files.exists("treino_exemplo.json") then
         local content = Engine.files.read("treino_exemplo.json")
         if content and Engine.json then
             local parsed = Engine.json.parse(content)
             if parsed and parsed.routines and #parsed.routines > 0 then
                 plan = parsed
+                active_file = "treino_exemplo.json"
                 if parsed.active_day and parsed.active_day ~= "auto" then
                     active_day_id = parsed.active_day
                 end
-                return true, "Plano de exemplo carregado de treino_exemplo.json"
+                return true, "Ficha de exemplo carregada de treino_exemplo.json"
             end
         end
     end
 
     plan = get_default_plan()
+    active_file = "embutido"
     return false, "Usando treino padrão embutido."
 end
 
-load_plan_from_file()
 load_state()
+load_plan_from_file(active_file)
 check_auto_day_switch()
 
 
@@ -331,14 +355,27 @@ function M.render()
         end
     end
 
+    -- Build Workout files list
+    local file_items = {}
+    local available_files = get_available_workout_files()
+    for _, fname in ipairs(available_files) do
+        table.insert(file_items, {
+            name = fname,
+            is_active = (fname == active_file),
+            cmd = "g load " .. fname
+        })
+    end
+
     -- Build Action buttons
     local actions = {}
     if is_timer_active then
         table.insert(actions, { label = "Pular Timer", cmd = "g skip" })
         table.insert(actions, { label = "+30s", cmd = "g +30" })
+        table.insert(actions, { label = show_file_list and "Fechar" or "Fichas", cmd = "g files" })
         table.insert(actions, { label = show_exercise_list and "Fechar" or "Lista", cmd = "g list" })
     else
         table.insert(actions, { label = "✓ Concluir Série", cmd = "g check" })
+        table.insert(actions, { label = show_file_list and "Fechar" or "Fichas", cmd = "g files" })
         table.insert(actions, { label = show_exercise_list and "Fechar" or "Lista", cmd = "g list" })
     end
 
@@ -364,7 +401,7 @@ function M.render()
 
     return {
         type = "workout",
-        title = "Gym Tracker",
+        title = "Gym Tracker (" .. (active_file or "treino.json") .. ")",
         day_name = r.name or ("Treino " .. active_day_id),
         exercise_name = ex.name or "Exercício",
         current_set = display_set,
@@ -380,6 +417,8 @@ function M.render()
         exercises = exercise_items,
         show_list = show_exercise_list,
         days = day_items,
+        files = file_items,
+        show_files = show_file_list,
         dec_weight_cmd = "g w-",
         inc_weight_cmd = "g w+",
         dec_reps_cmd = "g r-",
@@ -411,8 +450,9 @@ function M.on_command(args)
                "  g sel <idx>     : Seleciona exercício pelo número\n" ..
                "  g day [A|B|C]   : Troca rotina de treino (A, B, C...)\n" ..
                "  g auto          : Reativa seleção automática pelo dia da semana\n" ..
+               "  g files / g f   : Lista e alterna fichas de treino disponíveis\n" ..
+               "  g load [file|#] : Carrega ficha JSON de Documents/Shoka/data/\n" ..
                "  g list / g view : Abre/fecha a lista de exercícios\n" ..
-               "  g import [file] : Importa plano JSON de Documents/Shoka/data/\n" ..
                "  g reset         : Reseta o progresso do dia atual"
     end
 
@@ -459,9 +499,36 @@ function M.on_command(args)
         return "Sincronização automática reativada. Treino de hoje: " .. (cur_r and cur_r.name or active_day_id)
     end
 
-    -- g check / g c
+    -- g w <kg>
+    if cmd == "w" then
+        if not ex or not st then return "Nenhum exercício ativo." end
+        local w_val = tonumber(tokens[2])
+        if w_val then
+            st.weight = w_val
+            save_state()
+            return string.format("Carga de %s definida para %.1f kg", ex.name, st.weight)
+        end
+    end
+
+    -- g r <reps>
+    if cmd == "r" then
+        if not ex or not st then return "Nenhum exercício ativo." end
+        local r_val = tonumber(tokens[2])
+        if r_val then
+            st.reps = r_val
+            save_state()
+            return string.format("Repetições de %s definidas para %d reps", ex.name, st.reps)
+        end
+    end
+
+    -- g check / g c [kg] [reps]
     if cmd == "check" or cmd == "c" then
         if not ex or not st then return "Nenhum exercício ativo." end
+
+        local arg_w = tonumber(tokens[2])
+        if arg_w then st.weight = arg_w end
+        local arg_r = tonumber(tokens[3])
+        if arg_r then st.reps = arg_r end
 
         st.completed_sets = st.completed_sets + 1
         local rest_time = ex.rest_seconds or 60
@@ -562,7 +629,55 @@ function M.on_command(args)
     -- g list / g view
     if cmd == "list" or cmd == "view" then
         show_exercise_list = not show_exercise_list
+        if show_exercise_list then show_file_list = false end
         return show_exercise_list and "Lista de exercícios aberta." or "Lista de exercícios fechada."
+    end
+
+    -- g files / g f (lista ou alterna visualização de fichas)
+    if cmd == "files" or cmd == "f" then
+        show_file_list = not show_file_list
+        if show_file_list then show_exercise_list = false end
+        local av_files = get_available_workout_files()
+        local sb = { "FICHAS DISPONÍVEIS (DOCUMENTS/SHOKA/DATA/):" }
+        for idx, f in ipairs(av_files) do
+            local mark = (f == active_file) and " [ATIVA]" or ""
+            table.insert(sb, string.format("  [%d] %s%s", idx, f, mark))
+        end
+        table.insert(sb, "Digite 'g load <número ou nome>' para carregar.")
+        return table.concat(sb, "\n")
+    end
+
+    -- g load [file|#] / g import [file|#]
+    if cmd == "load" or cmd == "import" then
+        local target = string.gsub(raw, "^%S+%s*", "")
+        target = string.gsub(target, '^["\']', '')
+        target = string.gsub(target, '["\']$', '')
+        target = string.gsub(target, "^%s*(.-)%s*$", "%1")
+        if not target or target == "" then
+            return "Informe o nome ou número da ficha. Ex: 'g load 1' ou 'g load ficha A.json'."
+        end
+        local av_files = get_available_workout_files()
+        local target_file = target
+        local num = tonumber(target)
+        if num and num >= 1 and num <= #av_files then
+            target_file = av_files[num]
+        else
+            if not string.match(string.lower(target_file), "%.json$") then
+                target_file = target_file .. ".json"
+            end
+        end
+
+        local ok, msg = load_plan_from_file(target_file)
+        if ok then
+            current_ex_idx = 1
+            show_file_list = false
+            show_exercise_list = false
+            check_auto_day_switch(true)
+            save_state()
+            return "✓ Ficha alterada para: " .. target_file .. " (" .. (plan.routines[1] and plan.routines[1].name or "") .. ")"
+        else
+            return "Erro: arquivo '" .. target_file .. "' não encontrado em Documents/Shoka/data/."
+        end
     end
 
     -- g day [A|B|C]
@@ -590,15 +705,6 @@ function M.on_command(args)
             table.insert(sb, "Digite 'g day <letra>' para trocar, ou 'g auto' para modo automático.")
             return table.concat(sb, "\n")
         end
-    end
-
-    -- g import [filename]
-    if cmd == "import" then
-        local fname = tokens[2] or "treino.json"
-        local ok, msg = load_plan_from_file(fname)
-        current_ex_idx = 1
-        save_state()
-        return msg
     end
 
     -- g reset
@@ -649,6 +755,64 @@ function M.on_command(args)
     end
 
     return "Uso: 'g check', 'g skip', 'g <kg> [reps]', 'g day', ou 'g -h' para ajuda."
+end
+
+-- Autocomplete provider for CLI Zone
+function M.autocomplete(args)
+    local q = string.lower(args or "")
+    local list = {}
+    
+    if q == "" then
+        table.insert(list, { command = "check", label = "g check", executable = true })
+        table.insert(list, { command = "pular", label = "g pular", executable = true })
+        table.insert(list, { command = "files", label = "g files", executable = true })
+        table.insert(list, { command = "load ", label = "g load <ficha>", executable = false })
+        table.insert(list, { command = "day ", label = "g day <A|B|C>", executable = false })
+        table.insert(list, { command = "list", label = "g list", executable = true })
+        table.insert(list, { command = "reset", label = "g reset", executable = true })
+        table.insert(list, { command = "uncheck", label = "g uncheck", executable = true })
+        return list
+    end
+    
+    if string.match(q, "^l") or string.match(q, "^load") then
+        local files = get_available_workout_files()
+        local after = string.match(q, "^load%s*(.*)") or string.match(q, "^l%s*(.*)") or ""
+        after = string.gsub(after, '^["\']', '')
+        for _, f in ipairs(files) do
+            if after == "" or string.find(string.lower(f), after, 1, true) then
+                table.insert(list, { command = "load " .. f, label = "g load " .. f, executable = true })
+            end
+        end
+        return list
+    end
+
+    if string.match(q, "^d") or string.match(q, "^day") then
+        if plan and plan.routines then
+            for _, r in ipairs(plan.routines) do
+                table.insert(list, { command = "day " .. r.day_id, label = "g day " .. r.day_id .. " (" .. (r.name or "") .. ")", executable = true })
+            end
+        end
+        return list
+    end
+
+    local all = {
+        { command = "check", label = "g check", executable = true },
+        { command = "pular", label = "g pular", executable = true },
+        { command = "skip", label = "g skip", executable = true },
+        { command = "files", label = "g files", executable = true },
+        { command = "load ", label = "g load <ficha>", executable = false },
+        { command = "day ", label = "g day <A|B|C>", executable = false },
+        { command = "list", label = "g list", executable = true },
+        { command = "reset", label = "g reset", executable = true },
+        { command = "uncheck", label = "g uncheck", executable = true },
+        { command = "auto", label = "g auto", executable = true }
+    }
+    for _, item in ipairs(all) do
+        if string.find(string.lower(item.command), q, 1, true) then
+            table.insert(list, item)
+        end
+    end
+    return list
 end
 
 return M
