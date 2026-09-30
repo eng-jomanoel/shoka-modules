@@ -7,13 +7,15 @@ local M = {}
 M.id = "gym"
 M.name = "Gym Tracker"
 M.prefix = "g"
-M.help = "g check | g skip | g <kg> [reps] | g +2.5 | g -2.5 | g next | g prev | g day [A|B|C] | g list | g import [file] | g reset"
+M.help = "g check | g skip | g w+ | g w- | g r+ | g r- | g day [A|B|C] | g auto | g list | g reset"
 
 -- Internal State
 local plan = nil
 local active_day_id = "A"
 local current_ex_idx = 1
 local show_exercise_list = false
+local last_auto_date = ""
+local user_override_date = ""
 
 -- Rest Timer State
 local is_timer_active = false
@@ -22,6 +24,55 @@ local timer_total = 60
 
 -- Exercise Progress Tracking (keyed by exercise id)
 local exercise_states = {}
+
+-- Helper to get today's weekday (1=Mon .. 7=Sun) and date string (YYYY-MM-DD)
+local function get_today_info()
+    local day_num = 1
+    local date_str = ""
+    if Engine and Engine.time and Engine.time.date then
+        local u_val = tonumber(Engine.time.date("u"))
+        if u_val then day_num = u_val end
+        date_str = Engine.time.date("yyyy-MM-dd")
+    end
+    if date_str == "" and os and os.date then
+        local w = tonumber(os.date("%w"))
+        if w then day_num = (w == 0) and 7 or w end
+        date_str = os.date("%Y-%m-%d")
+    end
+    return day_num, date_str
+end
+
+local WEEKDAY_MAP = {
+    [1] = { "seg", "segunda", "segunda-feira", "mon", "monday", "1", 1 },
+    [2] = { "ter", "terca", "terça", "terca-feira", "terça-feira", "tue", "tuesday", "2", 2 },
+    [3] = { "qua", "quarta", "quarta-feira", "wed", "wednesday", "3", 3 },
+    [4] = { "qui", "quinta", "quinta-feira", "thu", "thursday", "4", 4 },
+    [5] = { "sex", "sexta", "sexta-feira", "fri", "friday", "5", 5 },
+    [6] = { "sab", "sabado", "sábado", "sat", "saturday", "6", 6 },
+    [7] = { "dom", "domingo", "sun", "sunday", "7", 7 }
+}
+
+local function routine_matches_weekday(routine, target_weekday_num)
+    if not routine or not routine.weekdays then return false end
+    local valid_aliases = WEEKDAY_MAP[target_weekday_num] or {}
+    local lookup = {}
+    for _, a in ipairs(valid_aliases) do
+        lookup[string.lower(tostring(a))] = true
+    end
+
+    if type(routine.weekdays) == "table" then
+        for _, day in ipairs(routine.weekdays) do
+            if lookup[string.lower(tostring(day))] then
+                return true
+            end
+        end
+    elseif type(routine.weekdays) == "string" then
+        if lookup[string.lower(routine.weekdays)] then
+            return true
+        end
+    end
+    return false
+end
 
 -- Fallback Default Workout Plan
 local function get_default_plan()
@@ -32,6 +83,7 @@ local function get_default_plan()
             {
                 day_id = "A",
                 name = "Treino A - Peito, Tríceps & Ombro",
+                weekdays = { "seg", "qui" },
                 exercises = {
                     { id = "supino_reto", name = "Supino Reto com Barra", target_sets = 4, target_reps = "8-12", default_weight = 80.0, rest_seconds = 90, notes = "Controle na descida" },
                     { id = "supino_inclinado", name = "Supino Inclinado com Halteres", target_sets = 3, target_reps = "10-12", default_weight = 26.0, rest_seconds = 60, notes = "Banco a 30 graus" },
@@ -43,6 +95,7 @@ local function get_default_plan()
             {
                 day_id = "B",
                 name = "Treino B - Costas & Bíceps",
+                weekdays = { "ter", "sex" },
                 exercises = {
                     { id = "puxada_alta", name = "Puxada Alta Frontal", target_sets = 4, target_reps = "8-12", default_weight = 60.0, rest_seconds = 90, notes = "Puxar com os cotovelos" },
                     { id = "remada_curvada", name = "Remada Curvada com Barra", target_sets = 4, target_reps = "8-10", default_weight = 65.0, rest_seconds = 90, notes = "Tronco a 45 graus" },
@@ -52,6 +105,7 @@ local function get_default_plan()
             {
                 day_id = "C",
                 name = "Treino C - Pernas & Abdômen",
+                weekdays = { "qua", "sab" },
                 exercises = {
                     { id = "agachamento_livre", name = "Agachamento Livre", target_sets = 4, target_reps = "8-10", default_weight = 90.0, rest_seconds = 120, notes = "Profundidade completa" },
                     { id = "leg_press_45", name = "Leg Press 45°", target_sets = 4, target_reps = "10-12", default_weight = 180.0, rest_seconds = 90, notes = "Amplitude total" },
@@ -67,11 +121,35 @@ local function save_state()
     local data = {
         active_day_id = active_day_id,
         current_ex_idx = current_ex_idx,
+        last_auto_date = last_auto_date,
+        user_override_date = user_override_date,
         states = exercise_states
     }
     if Engine and Engine.json and Engine.files then
         local encoded = Engine.json.encode(data)
         Engine.files.write("treino_state.json", encoded)
+    end
+end
+
+local function check_auto_day_switch(force)
+    local today_num, today_date = get_today_info()
+    if not plan or not plan.routines then return end
+
+    if not force and user_override_date == today_date then
+        return
+    end
+
+    if force or last_auto_date ~= today_date then
+        for _, rot in ipairs(plan.routines) do
+            if routine_matches_weekday(rot, today_num) then
+                active_day_id = rot.day_id
+                current_ex_idx = 1
+                last_auto_date = today_date
+                save_state()
+                return
+            end
+        end
+        last_auto_date = today_date
     end
 end
 
@@ -83,6 +161,8 @@ local function load_state()
             if parsed then
                 if parsed.active_day_id then active_day_id = parsed.active_day_id end
                 if parsed.current_ex_idx then current_ex_idx = parsed.current_ex_idx end
+                if parsed.last_auto_date then last_auto_date = parsed.last_auto_date end
+                if parsed.user_override_date then user_override_date = parsed.user_override_date end
                 if parsed.states then exercise_states = parsed.states end
             end
         end
@@ -98,7 +178,7 @@ local function load_plan_from_file(filename)
             local parsed = Engine.json.parse(content)
             if parsed and parsed.routines and #parsed.routines > 0 then
                 plan = parsed
-                if parsed.active_day then
+                if parsed.active_day and parsed.active_day ~= "auto" then
                     active_day_id = parsed.active_day
                 end
                 return true, "Plano carregado com sucesso de " .. filename
@@ -113,7 +193,7 @@ local function load_plan_from_file(filename)
             local parsed = Engine.json.parse(content)
             if parsed and parsed.routines and #parsed.routines > 0 then
                 plan = parsed
-                if parsed.active_day then
+                if parsed.active_day and parsed.active_day ~= "auto" then
                     active_day_id = parsed.active_day
                 end
                 return true, "Plano de exemplo carregado de treino_exemplo.json"
@@ -127,6 +207,8 @@ end
 
 load_plan_from_file()
 load_state()
+check_auto_day_switch()
+
 
 -- Helper Functions
 local function get_current_routine()
@@ -181,6 +263,7 @@ end
 
 -- Render Function called by Launcher Feed
 function M.render()
+    check_auto_day_switch()
     local r = get_current_routine()
     if not r or not r.exercises or #r.exercises == 0 then
         return {
@@ -228,6 +311,26 @@ function M.render()
         end
     end
 
+    -- Day selector chips
+    local day_items = {}
+    local today_num, _ = get_today_info()
+    if plan and plan.routines then
+        for _, rot in ipairs(plan.routines) do
+            local is_today = routine_matches_weekday(rot, today_num)
+            local lbl = "Treino " .. rot.day_id
+            if is_today then
+                lbl = lbl .. " (Hoje)"
+            end
+            table.insert(day_items, {
+                day_id = rot.day_id,
+                label = lbl,
+                is_current = (rot.day_id == active_day_id),
+                is_today = is_today,
+                cmd = "g day " .. rot.day_id
+            })
+        end
+    end
+
     -- Build Action buttons
     local actions = {}
     if is_timer_active then
@@ -235,9 +338,7 @@ function M.render()
         table.insert(actions, { label = "+30s", cmd = "g +30" })
         table.insert(actions, { label = show_exercise_list and "Fechar" or "Lista", cmd = "g list" })
     else
-        table.insert(actions, { label = "✓ Check", cmd = "g check" })
-        table.insert(actions, { label = "-2.5kg", cmd = "g -2.5" })
-        table.insert(actions, { label = "+2.5kg", cmd = "g +2.5" })
+        table.insert(actions, { label = "✓ Concluir Série", cmd = "g check" })
         table.insert(actions, { label = show_exercise_list and "Fechar" or "Lista", cmd = "g list" })
     end
 
@@ -277,7 +378,12 @@ function M.render()
         progress_text = string.format("%d/%d Feitos", completed_count, #r.exercises),
         actions = actions,
         exercises = exercise_items,
-        show_list = show_exercise_list
+        show_list = show_exercise_list,
+        days = day_items,
+        dec_weight_cmd = "g w-",
+        inc_weight_cmd = "g w+",
+        dec_reps_cmd = "g r-",
+        inc_reps_cmd = "g r+"
     }
 end
 
@@ -297,11 +403,14 @@ function M.on_command(args)
                "  g check / g c   : Conclui a série atual e inicia o descanso\n" ..
                "  g skip / g s    : Pula o cronômetro de descanso\n" ..
                "  g +30 / g -30   : Ajusta o timer de descanso em 30s\n" ..
+               "  g w+ / g w-     : Incrementa ou decrementa carga (+/- 1kg)\n" ..
+               "  g r+ / g r-     : Incrementa ou decrementa repetições (+/- 1 rep)\n" ..
                "  g <kg> [reps]   : Define carga e repetições (ex: 'g 85 10')\n" ..
                "  g +<kg> / -<kg> : Ajusta carga (ex: 'g +2.5', 'g -5')\n" ..
                "  g next / g prev : Avança ou volta exercício\n" ..
                "  g sel <idx>     : Seleciona exercício pelo número\n" ..
-               "  g day [A|B|C]   : Troca o dia/rotina de treino\n" ..
+               "  g day [A|B|C]   : Troca rotina de treino (A, B, C...)\n" ..
+               "  g auto          : Reativa seleção automática pelo dia da semana\n" ..
                "  g list / g view : Abre/fecha a lista de exercícios\n" ..
                "  g import [file] : Importa plano JSON de Documents/Shoka/data/\n" ..
                "  g reset         : Reseta o progresso do dia atual"
@@ -310,6 +419,45 @@ function M.on_command(args)
     local ex = get_current_exercise()
     local st = get_exercise_state(ex)
     local r = get_current_routine()
+
+    -- g w+ [delta] / g w- [delta] (stepper de carga)
+    if cmd == "w+" then
+        if not ex or not st then return "Nenhum exercício ativo." end
+        local delta = tonumber(tokens[2]) or 1.0
+        st.weight = (st.weight or 0) + delta
+        save_state()
+        return string.format("Carga de %s aumentada para %.1f kg", ex.name, st.weight)
+    elseif cmd == "w-" then
+        if not ex or not st then return "Nenhum exercício ativo." end
+        local delta = tonumber(tokens[2]) or 1.0
+        st.weight = math.max(0, (st.weight or 0) - delta)
+        save_state()
+        return string.format("Carga de %s reduzida para %.1f kg", ex.name, st.weight)
+    end
+
+    -- g r+ [delta] / g r- [delta] (stepper de repetições)
+    if cmd == "r+" then
+        if not ex or not st then return "Nenhum exercício ativo." end
+        local delta = tonumber(tokens[2]) or 1
+        st.reps = (st.reps or 10) + delta
+        save_state()
+        return string.format("Repetições de %s aumentadas para %d", ex.name, st.reps)
+    elseif cmd == "r-" then
+        if not ex or not st then return "Nenhum exercício ativo." end
+        local delta = tonumber(tokens[2]) or 1
+        st.reps = math.max(1, (st.reps or 10) - delta)
+        save_state()
+        return string.format("Repetições de %s reduzidas para %d", ex.name, st.reps)
+    end
+
+    -- g auto
+    if cmd == "auto" then
+        user_override_date = ""
+        check_auto_day_switch(true)
+        save_state()
+        local cur_r = get_current_routine()
+        return "Sincronização automática reativada. Treino de hoje: " .. (cur_r and cur_r.name or active_day_id)
+    end
 
     -- g check / g c
     if cmd == "check" or cmd == "c" then
@@ -425,8 +573,10 @@ function M.on_command(args)
                 if string.upper(rot.day_id) == target then
                     active_day_id = rot.day_id
                     current_ex_idx = 1
+                    local _, today_date = get_today_info()
+                    user_override_date = today_date
                     save_state()
-                    return "Rotina alterada para: " .. rot.name
+                    return "Rotina alterada para: " .. rot.name .. " (fixado para hoje)"
                 end
             end
             return "Dia '" .. target .. "' não encontrado nas rotinas disponíveis."
@@ -437,7 +587,7 @@ function M.on_command(args)
                 local mark = (rot.day_id == active_day_id) and " [ATIVO]" or ""
                 table.insert(sb, string.format("  [%s] %s%s", rot.day_id, rot.name, mark))
             end
-            table.insert(sb, "Digite 'g day <letra>' para trocar.")
+            table.insert(sb, "Digite 'g day <letra>' para trocar, ou 'g auto' para modo automático.")
             return table.concat(sb, "\n")
         end
     end

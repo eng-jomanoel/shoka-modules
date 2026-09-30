@@ -6,6 +6,7 @@
     {
       "day_id": "A",
       "name": "Treino A - Peito, Tríceps & Ombro",
+      "weekdays": ["seg", "qui"],
       "exercises": [
         {
           "id": "supino_reto",
@@ -66,6 +67,7 @@
     {
       "day_id": "B",
       "name": "Treino B - Costas, Bíceps & Trapézio",
+      "weekdays": ["ter", "sex"],
       "exercises": [
         {
           "id": "puxada_alta",
@@ -126,6 +128,7 @@
     {
       "day_id": "C",
       "name": "Treino C - Pernas & Abdômen",
+      "weekdays": ["qua", "sab"],
       "exercises": [
         {
           "id": "agachamento_livre",
