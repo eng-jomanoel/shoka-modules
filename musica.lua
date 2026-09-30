@@ -12,7 +12,7 @@ local playlists = {}
 local current_pl_idx = 1
 local current_song_idx = 1
 local view_mode = "player" -- "player", "queue", "playlists"
-local loop_mode = "all" -- "off", "all", "one"
+local loop_mode = "off" -- "off", "all", "one" (default is off)
 local shuffle = false
 local history = {}
 
@@ -35,6 +35,22 @@ local function rescan_library()
     local current_pl = playlists[current_pl_idx]
     if current_pl and current_song_idx > #(current_pl.songs or {}) then
         current_song_idx = 1
+    end
+
+    -- If audio is already playing, sync to the track
+    local current_path = Engine.audio.current_path()
+    if current_path and current_path ~= "" then
+        for p_idx, pl in ipairs(playlists) do
+            if pl.songs then
+                for s_idx, s in ipairs(pl.songs) do
+                    if s.path == current_path then
+                        current_pl_idx = p_idx
+                        current_song_idx = s_idx
+                        return
+                    end
+                end
+            end
+        end
     end
 end
 
