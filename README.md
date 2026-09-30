@@ -28,7 +28,7 @@ Full-featured, hot-reloadable music player with GUI & CLI integration.
 1. Connect your Android device via USB or Wireless ADB.
 2. Push module files to the launcher's module directory:
    ```bash
-   adb push musica.lua /sdcard/Documents/ModularLife/modules/musica.lua
+   adb push musica.lua /sdcard/Documents/Shoka/modules/musica.lua
    ```
 3. In Shoka Launcher CLI, run:
    ```bash
