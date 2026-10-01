@@ -107,9 +107,7 @@ function M.render()
     -- Lógica de Grid dependendo do view_mode
     if state.view_mode == "month" then
         local first_day_ts = os.time({year=v_year, month=v_month, day=1, hour=12})
-        local wday = tonumber(Engine.time.date("e", first_day_ts * 1000)) or tonumber(os.date("%w", first_day_ts))
-        -- Se "e" der 1=Domingo, então wday ajustado para 0-6. Vamos assumir os.date("%w") para 0=Dom.
-        wday = tonumber(os.date("%w", first_day_ts))
+        local wday = tonumber(os.date("%w", first_day_ts))
         
         local d_in_m = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
         if v_month == 2 and ((v_year % 4 == 0 and v_year % 100 ~= 0) or (v_year % 400 == 0)) then d_in_m[2] = 29 end
