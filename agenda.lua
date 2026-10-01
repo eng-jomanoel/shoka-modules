@@ -191,24 +191,14 @@ function M.render()
         if t.checked then has_checked = true end
     end
 
-    -- Botões de Ação
+    -- Botões de Ação Contextuais
     local actions = {}
-    table.insert(actions, { label = "Hoje", cmd = "a today" })
-    table.insert(actions, { label = "< Ant", cmd = "a prev" })
-    table.insert(actions, { label = "Próx >", cmd = "a next" })
-
     if has_checked then
         table.insert(actions, { label = "Limpar Feitas", cmd = "a clear" })
     end
-
     if #sel_items.events > 0 then
         table.insert(actions, { label = "Limpar Eventos", cmd = "a clear_evt" })
     end
-
-    table.insert(actions, {
-        label = (state.is_open and "Ocultar" or "Mostrar"),
-        cmd = (state.is_open and "a close" or "a open")
-    })
 
     local subtitle = format_display_date(sel_str)
     if sel_str == today_str then
