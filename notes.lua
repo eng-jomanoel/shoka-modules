@@ -62,7 +62,7 @@ load_state()
 function M.render()
     return {
         type = "notes",
-        title = "📝 Bloco de Notas",
+        title = "Notas",
         content = content
     }
 end
@@ -117,9 +117,9 @@ function M.autocomplete(args)
     local cmd = raw:match("^(%S+)") or ""
 
     if cmd == "" then
-        table.insert(suggestions, { command = "n ", label = "📝 Anotar no bloco de notas", executable = false })
+        table.insert(suggestions, { command = "n ", label = "Anotar no bloco de notas", executable = false })
         if content ~= "" then
-            table.insert(suggestions, { command = "n clear", label = "🗑 Limpar bloco de notas", executable = true })
+            table.insert(suggestions, { command = "n clear", label = "Limpar bloco de notas", executable = true })
         end
     end
 
