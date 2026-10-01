@@ -185,25 +185,25 @@ function M.render()
     
     -- Botões
     if state.view_mode == "month" then
-        table.insert(actions, { label = "↳ Semana", cmd = "a vw week" })
+        table.insert(actions, { label = "[Semana]", cmd = "a vw week" })
     elseif state.view_mode == "week" then
-        table.insert(actions, { label = "↳ Dia", cmd = "a vw day" })
+        table.insert(actions, { label = "[Dia]", cmd = "a vw day" })
     else
-        table.insert(actions, { label = "↰ Mês", cmd = "a vw month" })
+        table.insert(actions, { label = "[Mes]", cmd = "a vw month" })
     end
     
-    table.insert(actions, { label = "◀", cmd = "a prev" })
-    table.insert(actions, { label = "▶", cmd = "a next" })
+    table.insert(actions, { label = "< Ant", cmd = "a prev" })
+    table.insert(actions, { label = "Prox >", cmd = "a next" })
     
     if has_checked then
-        table.insert(actions, { label = "🗑 Limpar Feitas", cmd = "a clear" })
+        table.insert(actions, { label = "Limpar Feitas", cmd = "a clear" })
     end
     
     if #sel_items.events > 0 then
-        table.insert(actions, { label = "🧹 Limpar Eventos", cmd = "a clear_evt" })
+        table.insert(actions, { label = "Limpar Eventos", cmd = "a clear_evt" })
     end
     
-    table.insert(actions, { label = (state.is_open and "✕ Ocultar" or "▽ Mostrar"), cmd = (state.is_open and "a close" or "a open") })
+    table.insert(actions, { label = (state.is_open and "Ocultar" or "Mostrar"), cmd = (state.is_open and "a close" or "a open") })
 
     local subtitle = "Mostrando: " .. Engine.time.date("dd/MM/yyyy", state.selected_ts * 1000)
     
@@ -216,7 +216,9 @@ function M.render()
         days = days_ui,
         events = ui_events,
         tasks = ui_tasks,
-        actions = actions
+        actions = actions,
+        input_hint = "Nova tarefa no dia selecionado...",
+        input_cmd = "a"
     }
 end
 
