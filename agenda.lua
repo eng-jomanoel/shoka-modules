@@ -6,7 +6,7 @@ local M = {}
 M.id = "agenda"
 M.name = "Agenda Offline"
 M.prefix = "a"
-M.help = "a <texto> -> Nova tarefa\na [] <texto> -> Nova tarefa c/ checkbox\na evt <hora> <titulo> -> Novo evento\na toggle <id> -> Marcar tarefa\na del <id> -> Apagar tarefa\na clear -> Limpar concluidas/eventos\na open/close -> Ocultar bloco"
+M.help = "a <texto> -> Nova tarefa\na [] <texto> -> Nova tarefa c/ checkbox\na evt <hora> <titulo> -> Novo evento hoje\na toggle <id> -> Marcar tarefa\na del <id> -> Apagar tarefa\na clear -> Limpar concluidas/eventos\na open/close -> Ocultar bloco"
 
 local DATA_FILE = "agenda_offline.json"
 local is_open = true
@@ -78,11 +78,54 @@ function M.render()
         subtitle = #events .. " evento(s) | " .. #tasks .. " tarefa(s)"
     end
     
+    -- Construir Grid do Calendario para o Mes Atual
+    local now_ts = Engine.time.now()
+    local y = tonumber(Engine.time.date("yyyy", now_ts))
+    local m = tonumber(Engine.time.date("MM", now_ts))
+    local current_day = tonumber(Engine.time.date("dd", now_ts))
+    
+    -- Em vez de os.time, podemos so montar um grid aproximado usando os.date do dia 1.
+    -- Como JsePlatform.standardGlobals nem sempre tem TZ certo no Android p/ os.time,
+    -- vamos usar os.time com cuidado
+    local t1 = os.time({year=y, month=m, day=1})
+    local wday = tonumber(os.date("%w", t1)) -- 0 = Domingo, 1 = Seg ...
+    
+    local d_in_m = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
+    if m == 2 and ((y % 4 == 0 and y % 100 ~= 0) or (y % 400 == 0)) then d_in_m[2] = 29 end
+    local max_d = d_in_m[m]
+    
+    local days = {}
+    -- padding inicial (wday 0-6: D-S)
+    for i = 1, wday do
+        table.insert(days, { day = -1 })
+    end
+    -- dias
+    for d = 1, max_d do
+        local has_t = false
+        local has_e = false
+        if d == current_day then
+            has_t = (#tasks > 0)
+            has_e = (#events > 0)
+        end
+        table.insert(days, {
+            day = d,
+            is_today = (d == current_day),
+            is_selected = (d == current_day),
+            has_tasks = has_t,
+            has_events = has_e
+        })
+    end
+    
+    local meses = {"Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"}
+    local month_label = meses[m] .. " " .. y
+    
     return {
         type = "agenda",
         title = "📅 Agenda",
         subtitle = subtitle,
         is_open = is_open,
+        month_label = month_label,
+        days = days,
         events = ui_events,
         tasks = ui_tasks,
         actions = actions
