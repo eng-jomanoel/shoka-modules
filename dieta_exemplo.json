@@ -1,0 +1,161 @@
+{
+  "version": 1,
+  "title": "Dieta Hipertrofia 2400kcal",
+  "description": "Modelo de Dieta Shoka compatível com IA",
+  "ai_instructions": "Copie este JSON e a sua dieta para o ChatGPT/Claude/Gemini com o seguinte prompt: 'Converta a minha dieta anexada para o formato exato deste JSON de exemplo do Shoka Launcher, mantendo as chaves calories, protein, carbs, fats, water_target e os itens detalhados com name e amount.'",
+  "target_water_ml": 3000,
+  "active_day": "A",
+  "routines": [
+    {
+      "day_id": "A",
+      "name": "Dia de Treino",
+      "weekdays": ["seg", "ter", "qua", "qui", "sex", "sab"],
+      "target_calories": 2400,
+      "target_protein": 165,
+      "target_carbs": 280,
+      "target_fats": 65,
+      "meals": [
+        {
+          "id": "cafe",
+          "name": "Café da Manhã",
+          "time": "07:30",
+          "calories": 500,
+          "protein": 32,
+          "carbs": 60,
+          "fats": 14,
+          "items": [
+            { "name": "Ovos mexidos", "amount": "3 unidades" },
+            { "name": "Pão integral", "amount": "2 fatias (50g)" },
+            { "name": "Queijo cottage ou minas frescal", "amount": "30g" },
+            { "name": "Café preto sem açúcar", "amount": "200ml" }
+          ],
+          "notes": "Tomar creatina e multivitamínico"
+        },
+        {
+          "id": "almoco",
+          "name": "Almoço",
+          "time": "12:30",
+          "calories": 750,
+          "protein": 52,
+          "carbs": 95,
+          "fats": 18,
+          "items": [
+            { "name": "Arroz branco ou integral", "amount": "200g" },
+            { "name": "Feijão carioca ou preto", "amount": "100g" },
+            { "name": "Peito de frango grelhado", "amount": "160g" },
+            { "name": "Azeite de oliva extravirgem", "amount": "1 colher de sobremesa (7ml)" },
+            { "name": "Salada de folhas e tomate", "amount": "À vontade" }
+          ]
+        },
+        {
+          "id": "lanche",
+          "name": "Lanche da Tarde / Pré-Treino",
+          "time": "16:00",
+          "calories": 420,
+          "protein": 28,
+          "carbs": 58,
+          "fats": 8,
+          "items": [
+            { "name": "Whey protein concentrado", "amount": "30g" },
+            { "name": "Banana prata", "amount": "2 unidades (140g)" },
+            { "name": "Aveia em flocos finos", "amount": "35g" }
+          ]
+        },
+        {
+          "id": "jantar",
+          "name": "Jantar / Pós-Treino",
+          "time": "20:00",
+          "calories": 550,
+          "protein": 42,
+          "carbs": 65,
+          "fats": 13,
+          "items": [
+            { "name": "Patinho moído ou filé de tilápia", "amount": "150g" },
+            { "name": "Batata inglesa ou mandioca cozida", "amount": "220g" },
+            { "name": "Brócolis ou legumes no vapor", "amount": "120g" }
+          ]
+        },
+        {
+          "id": "ceia",
+          "name": "Ceia",
+          "time": "22:30",
+          "calories": 180,
+          "protein": 11,
+          "carbs": 8,
+          "fats": 12,
+          "items": [
+            { "name": "Iogurte natural desnatado", "amount": "170g" },
+            { "name": "Castanhas do Pará ou amêndoas", "amount": "15g (3 unidades)" }
+          ]
+        }
+      ]
+    },
+    {
+      "day_id": "B",
+      "name": "Dia de Descanso",
+      "weekdays": ["dom"],
+      "target_calories": 2000,
+      "target_protein": 160,
+      "target_carbs": 180,
+      "target_fats": 65,
+      "meals": [
+        {
+          "id": "cafe",
+          "name": "Café da Manhã",
+          "time": "08:30",
+          "calories": 480,
+          "protein": 34,
+          "carbs": 45,
+          "fats": 16,
+          "items": [
+            { "name": "Ovos mexidos com tomate", "amount": "3 unidades" },
+            { "name": "Pão integral", "amount": "2 fatias" },
+            { "name": "Mamão papaia", "amount": "100g" }
+          ]
+        },
+        {
+          "id": "almoco",
+          "name": "Almoço",
+          "time": "13:00",
+          "calories": 680,
+          "protein": 48,
+          "carbs": 65,
+          "fats": 22,
+          "items": [
+            { "name": "Arroz branco", "amount": "140g" },
+            { "name": "Feijão carioca", "amount": "100g" },
+            { "name": "Carne vermelha magra (alcatra ou patinho)", "amount": "160g" },
+            { "name": "Legumes cozidos e folhas", "amount": "À vontade" }
+          ]
+        },
+        {
+          "id": "lanche",
+          "name": "Lanche da Tarde",
+          "time": "17:00",
+          "calories": 340,
+          "protein": 28,
+          "carbs": 30,
+          "fats": 10,
+          "items": [
+            { "name": "Iogurte natural com 1 scoop de Whey", "amount": "1 pote (170g) + 30g whey" },
+            { "name": "Maçã", "amount": "1 unidade média" }
+          ]
+        },
+        {
+          "id": "jantar",
+          "name": "Jantar",
+          "time": "20:30",
+          "calories": 500,
+          "protein": 50,
+          "carbs": 40,
+          "fats": 17,
+          "items": [
+            { "name": "Peito de frango grelhado", "amount": "180g" },
+            { "name": "Purê de abóbora cabotiá", "amount": "200g" },
+            { "name": "Salada variada com azeite", "amount": "À vontade" }
+          ]
+        }
+      ]
+    }
+  ]
+}
